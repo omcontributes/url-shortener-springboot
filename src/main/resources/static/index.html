@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>URL Shortener</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 40px 16px; }
+        .card { max-width: 560px; margin: 0 auto; background: #fff; padding: 28px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+        h1 { margin-top: 0; color: #1a3a5c; }
+        label { display: block; margin: 14px 0 6px; font-weight: bold; font-size: 14px; }
+        input { width: 100%; padding: 10px; border: 1px solid #c5d0dc; border-radius: 6px; font-size: 15px; }
+        .row { display: flex; gap: 12px; }
+        .row > div { flex: 1; }
+        button { margin-top: 18px; width: 100%; padding: 12px; background: #2563eb; color: #fff; border: 0; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+        .result, .error { margin-top: 20px; padding: 14px; border-radius: 6px; word-break: break-all; }
+        .result { background: #e8f5e9; }
+        .error { background: #fdecea; color: #b71c1c; }
+        .hidden { display: none; }
+        .copy { width: auto; padding: 6px 14px; font-size: 14px; margin-top: 10px; }
+        a { color: #2563eb; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>URL Shortener</h1>
+
+    <label for="url">Long URL</label>
+    <input id="url" type="text" placeholder="https://example.com/very/long/link">
+
+    <div class="row">
+        <div>
+            <label for="alias">Custom alias (optional)</label>
+            <input id="alias" type="text" placeholder="my-link">
+        </div>
+        <div>
+            <label for="days">Expires in days (optional)</label>
+            <input id="days" type="number" min="1" placeholder="7">
+        </div>
+    </div>
+
+    <button onclick="shorten()">Shorten</button>
+
+    <div id="result" class="result hidden">
+        <div>Short URL: <a id="shortLink" href="#" target="_blank"></a></div>
+        <button class="copy" onclick="copyLink()">Copy</button>
+        <button class="copy" onclick="showStats()">View clicks</button>
+        <div id="stats"></div>
+    </div>
+    <div id="error" class="error hidden"></div>
+</div>
+
+<script>
+    let currentCode = null;
+
+    async function shorten() {
+      const url = document.getElementById('url').value.trim();
+      const alias = document.getElementById('alias').value.trim();
+      const days = document.getElementById('days').value;
+
+      const body = { url: url };
+      if (alias) body.customAlias = alias;
+      if (days) body.expiryDays = parseInt(days, 10);
+
+      hide('result'); hide('error');
+      document.getElementById('stats').textContent = '';
+
+      try {
+        const res = await fetch('/api/shorten', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.error || 'Something went wrong');
+          return;
+        }
+        currentCode = data.shortCode;
+        const link = document.getElementById('shortLink');
+        link.textContent = data.shortUrl;
+        link.href = data.shortUrl;
+        show('result');
+      } catch (e) {
+        showError('Could not reach the server');
+      }
+    }
+
+    function copyLink() {
+      const text = document.getElementById('shortLink').textContent;
+      navigator.clipboard.writeText(text);
+    }
+
+    async function showStats() {
+      const res = await fetch('/api/stats/' + currentCode);
+      const data = await res.json();
+      document.getElementById('stats').textContent = 'Clicks so far: ' + data.clickCount;
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      show('error');
+    }
+    function show(id) { document.getElementById(id).classList.remove('hidden'); }
+    function hide(id) { document.getElementById(id).classList.add('hidden'); }
+</script>
+</body>
+</html>
