@@ -2,8 +2,9 @@
 
 A URL shortener built with **Java 17, Spring Boot 3 and Spring Data JPA**, with a simple web front-end. Paste a long link, get a short one, and track how many times it is clicked.
 
-**Live demo:** [add your Render link here]
+**Live demo:** https://url-shortener-springboot-i3no.onrender.com
 
+> Note: this runs on a free instance. The first load can take 1 to 2 minutes to wake up, and saved links reset when the app restarts.
 ## Screenshot
 ![App screenshot](screenshot.png)
 
